@@ -38,34 +38,8 @@ func main() {
 			ArgsUsage: `MANIFEST_URL`,
 			Flags:     []cli.Flag{},
 			Action: func(c *cli.Context) {
-				overrideManifestFile := filepath.Join(`.repo`, `default.xml`)
-
-				if !fileutil.IsNonemptyFile(overrideManifestFile) {
-					if c.NArg() > 0 {
-						if !fileutil.Exists(`.repo`) {
-							if err := os.Mkdir(`.repo`, 0700); err != nil {
-								log.Fatal(err)
-							}
-						}
-
-						manifestUri := c.Args().First()
-						mandir := filepath.Join(`.repo`, `manifest`)
-
-						// clone or pull manifest repo
-						if !fileutil.DirExists(filepath.Join(mandir, `.git`)) {
-							if err := os.RemoveAll(mandir); err == nil {
-								if err := GitClone(manifestUri, mandir); err != nil {
-									log.Fatalf("failed to retrieve manifest: %v", err)
-								}
-							} else {
-								log.Fatalf("failed to cleanup stale manifest directory: %v", err)
-							}
-						}
-					} else {
-						cli.ShowCommandHelp(c, `init`)
-					}
-				} else {
-					log.Noticef("Override manifest file already present at %v", overrideManifestFile)
+				if err := InitializeManifest(c.Args().First()); err != nil {
+					log.Fatal(err)
 				}
 			},
 		}, {
@@ -121,7 +95,7 @@ func main() {
 func loadManifest(c *cli.Context) *Manifest {
 	var manifestFile string
 
-	if mf := filepath.Join(`.repo`, `default.xml`); fileutil.IsNonemptyFile(mf) {
+	if mf := filepath.Join(`pman.xml`); fileutil.IsNonemptyFile(mf) {
 		manifestFile = mf
 	} else {
 		mandir := filepath.Join(`.repo`, `manifest`)
@@ -134,6 +108,7 @@ func loadManifest(c *cli.Context) *Manifest {
 	}
 
 	if manifest, err := LoadManifest(manifestFile); err == nil {
+		log.Infof("Loaded project manifest from %s", manifestFile)
 		return manifest
 	} else {
 		log.Fatalf("failed to load manifest: %v", err)

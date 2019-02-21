@@ -14,6 +14,11 @@ import (
 	"github.com/ghetzel/go-stockutil/sliceutil"
 )
 
+var DefaultLocalManifestFile = `pman.xml`
+var ManifestRepoWorkingDirectory = `.repo/manifest`
+var ManifestRepoRef = sliceutil.OrString(os.Getenv(`PMAN_MANIFEST_REPO_BRANCH`), `master`)
+var ManifestRepoFilename = sliceutil.OrString(os.Getenv(`PMAN_MANIFEST_REPO_FILENAME`), `default.xml`)
+
 type ManifestRemote struct {
 	Name            string `json:"name,omitempty"   xml:"name,attr,omitempty"`
 	Fetch           string `json:"fetch,omitempty"  xml:"fetch,attr,omitempty"`
@@ -237,6 +242,59 @@ func LoadManifest(filename string) (*Manifest, error) {
 	} else {
 		return nil, err
 	}
+}
+
+func InitializeManifest(manifestUri string) error {
+	// if we have a checked-out repo serving as our manifest, clone or pull it.
+	if fileutil.DirExists(filepath.Join(ManifestRepoWorkingDirectory, `.git`)) {
+		log.Infof("Pulling project manifest repository in %s", ManifestRepoWorkingDirectory)
+
+		if err := GitPull(ManifestRepoWorkingDirectory, `master`); err != nil {
+			return fmt.Errorf("failed to retrieve manifest: %v", err)
+		}
+
+	} else if strings.HasPrefix(manifestUri, `git://`) || strings.Contains(manifestUri, `git@`) {
+		// if we're here, there isn't a manifest repo already and no local manifest file...
+
+		// ...ensure the parent dir exists
+		if !fileutil.Exists(filepath.Dir(ManifestRepoWorkingDirectory)) {
+			if err := os.Mkdir(filepath.Dir(ManifestRepoWorkingDirectory), 0700); err != nil {
+				return fmt.Errorf("failed to create project manifest parent: %v", err)
+			}
+		}
+
+		// and clone the git URI
+		if err := GitClone(manifestUri, ManifestRepoWorkingDirectory); err != nil {
+			return fmt.Errorf("failed to retrieve manifest: %v", err)
+		}
+	} else if err := initLocalProjectManifest(manifestUri); err != nil {
+		return err
+	}
+
+	if mf := LocateManifestFile(); mf != `` {
+		log.Noticef("Project manifest file present at %v", mf)
+		return nil
+	} else {
+		return fmt.Errorf("Unable to initialize: could not find project manifest file")
+	}
+}
+
+func LocateManifestFile() string {
+	for _, pmf := range []string{
+		DefaultLocalManifestFile,
+		filepath.Join(ManifestRepoWorkingDirectory, ManifestRepoFilename),
+	} {
+		if fileutil.IsNonemptyFile(pmf) {
+			return pmf
+		}
+	}
+
+	return ``
+}
+
+func initLocalProjectManifest(manifestUri string) error {
+	log.Debugf("Copying manifest %v to %v", manifestUri, DefaultLocalManifestFile)
+	return fileutil.CopyFile(manifestUri, DefaultLocalManifestFile)
 }
 
 func UrlPathJoin(uri string, path string) string {
