@@ -12,8 +12,8 @@ github.com/ghetzel/argonaut v0.1.1/go.mod h1:GwjagTNkLcLXD/A3ZOH5L5kpQ6CZXuJwIYI
 github.com/ghetzel/cli v1.17.0 h1:gMbJBrjPMz7JRsYrcV7sK60HCqQxwI/xO8dEjP6Z1yk=
 github.com/ghetzel/cli v1.17.0/go.mod h1:Q+8sg5kp2RtKNJH7orf5ntfal6ol+XPGCYyRd5dEJm8=
 github.com/ghetzel/go-stockutil v1.5.53/go.mod h1:Y2IAZKZNEGeZZD46Cwd94CoA1Oh+Bx0N4c2z5FpMT5s=
-github.com/ghetzel/go-stockutil v1.7.18 h1:4N+ckiMGbHrZSP4ACrBUxLMhf5wDjD48V80TASkpq2E=
-github.com/ghetzel/go-stockutil v1.7.18/go.mod h1:fyBrRIl4R7qZXKWeT9JDTnIACCj3MdXcUlWCYCqquRw=
+github.com/ghetzel/go-stockutil v1.7.19 h1:kdjJ9m8uosqbW174ewn76mcpCnPDXF0UDRpOv4D68zQ=
+github.com/ghetzel/go-stockutil v1.7.19/go.mod h1:fyBrRIl4R7qZXKWeT9JDTnIACCj3MdXcUlWCYCqquRw=
 github.com/ghetzel/uuid v0.0.0-20171129191014-dec09d789f3d h1:YVJe7KwVYazt90hCc/q2dYJVS3062AY6QdT6iHd+Kh8=
 github.com/ghetzel/uuid v0.0.0-20171129191014-dec09d789f3d/go.mod h1:7CCemW/spiphukVWb/v2WWYeZkydh30TwSRBh48irZQ=
 github.com/h2non/filetype v1.0.5 h1:Esu2EFM5vrzNynnGQpj0nxhCkzVQh2HRY7AXUh/dyJM=

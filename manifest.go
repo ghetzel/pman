@@ -19,6 +19,30 @@ var ManifestRepoWorkingDirectory = `.repo/manifest`
 var ManifestRepoRef = sliceutil.OrString(os.Getenv(`PMAN_MANIFEST_REPO_BRANCH`), `master`)
 var ManifestRepoFilename = sliceutil.OrString(os.Getenv(`PMAN_MANIFEST_REPO_FILENAME`), `default.xml`)
 
+type ManifestBranch struct {
+	Name     string `json:"name,omitempty"     xml:"name,attr,omitempty"`
+	Color    string `json:"color,omitempty"    xml:"color,attr,omitempty"`
+	Prefixes string `json:"prefixes,omitempty" xml:"prefixes,attr,omitempty"`
+}
+
+func (self ManifestBranch) MatchBranchName(branch string) bool {
+	if branch == self.Name {
+		return true
+	} else {
+		for _, prefix := range strings.Split(self.Prefixes, ` `) {
+			if strings.HasPrefix(branch, strings.TrimSpace(prefix)) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+type ManifestConfig struct {
+	Branches []ManifestBranch `json:"branches,omitempty" xml:"branch,omitempty"`
+}
+
 type ManifestRemote struct {
 	Name            string `json:"name,omitempty"   xml:"name,attr,omitempty"`
 	Fetch           string `json:"fetch,omitempty"  xml:"fetch,attr,omitempty"`
@@ -81,8 +105,9 @@ func (self ManifestProject) SkipInclude() bool {
 
 type Manifest struct {
 	Remotes  []ManifestRemote  `json:"remotes,omitempty"  xml:"remote,omitempty"`
-	Default  ManifestProject   `json:"default,omitempty"  xml:"default,omitempty"`
+	Default  *ManifestProject  `json:"default,omitempty"  xml:"default,omitempty"`
 	Projects []ManifestProject `json:"projects,omitempty" xml:"project,omitempty"`
+	Config   *ManifestConfig   `json:"config,omitempty"   xml:"config,omitempty"`
 }
 
 func (self *Manifest) GetRemote(name string) *ManifestRemote {
@@ -145,7 +170,11 @@ func (self *Manifest) GetProjects(from []ManifestProject, parent *ManifestProjec
 	}
 
 	if parent == nil {
-		parent = &self.Default
+		if self.Default != nil {
+			parent = self.Default
+		} else {
+			parent = &ManifestProject{}
+		}
 	}
 
 	// expand parent envvars
@@ -226,6 +255,20 @@ func (self *Manifest) GetProjects(from []ManifestProject, parent *ManifestProjec
 	}
 
 	return projects
+}
+
+func (self *Manifest) ColorForBranch(branch string) string {
+	if config := self.Config; config != nil {
+		for _, bconfig := range config.Branches {
+			if bconfig.MatchBranchName(branch) {
+				if bconfig.Color != `` {
+					return bconfig.Color
+				}
+			}
+		}
+	}
+
+	return `reset`
 }
 
 func LoadManifest(filename string) (*Manifest, error) {

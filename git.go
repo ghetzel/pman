@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ghetzel/argonaut"
 	"github.com/ghetzel/go-stockutil/fileutil"
@@ -78,5 +79,27 @@ func GitBranchTo(workingDirectory string, newBranchName string) error {
 		}
 	} else {
 		return fmt.Errorf("no such directory %q", workingDirectory)
+	}
+}
+
+func GitCurrentBranch(workingDirectory string) (string, error) {
+	if fileutil.DirExists(workingDirectory) {
+		if revparse, err := argonaut.Command(&git{
+			Subcommand: `rev-parse`,
+			Arguments:  []interface{}{`--abbrev-ref`, `HEAD`},
+		}); err == nil {
+			revparse.Dir = workingDirectory
+
+			if out, err := revparse.Output(); err == nil {
+				lines := strings.Split(string(out), "\n")
+				return lines[0], nil
+			} else {
+				return ``, err
+			}
+		} else {
+			return ``, err
+		}
+	} else {
+		return ``, fmt.Errorf("no such directory %q", workingDirectory)
 	}
 }
